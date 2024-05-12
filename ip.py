@@ -1,7 +1,7 @@
 import requests
 import socket
 
-API_KEY = '832b95377a624c9480429dba66575e9a'
+API_KEY = 'ה-API_KEY_שלך_כאן'
 
 def fetch_domain_info(domain):
     try:
