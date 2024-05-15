@@ -1,49 +1,35 @@
-const fetch = require('node-fetch');
-const dns = require('dns');
-
-const API_KEY = 'ה-API_KEY_שלך_כאן';
-
-async function fetchDomainInfo(domain) {
-    try {
-        const ip = await resolveDomain(domain);
-        const url = `https://api.ipgeolocation.io/ipgeo?apiKey=${API_KEY}&ip=${ip}`;
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data.error) {
-            console.log(`Error: ${data.error.message}`);
-        } else {
-            displayDomainInfo(data);
-        }
-    } catch (error) {
-        console.log('Error:', error.message);
-    }
-}
-
-function resolveDomain(domain) {
-    return new Promise((resolve, reject) => {
-        dns.resolve(domain, (error, addresses) => {
-            if (error) {
-                reject(error);
+function fetchDomainInfo(domain) {
+    fetch(`https://ipgeolocation.io/what-is-my-ip/${domain}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.text();
+        })
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const table = doc.querySelector('.table');
+            if (table) {
+                displayDomainInfo(table);
             } else {
-                resolve(addresses[0]);
+                console.error('Error: Data table not found in HTML.');
             }
-        });
-    });
+        })
+        .catch(error => console.error('Error:', error));
 }
 
-function displayDomainInfo(data) {
-    console.log('מידע מהדוח:');
-    for (const key in data) {
-        if (typeof data[key] === 'object') {
-            console.log(`${key}:`);
-            for (const innerKey in data[key]) {
-                console.log(`  ${innerKey}: ${data[key][innerKey]}`);
-            }
-        } else {
-            console.log(`${key}: ${data[key]}`);
+function displayDomainInfo(table) {
+    const rows = table.querySelectorAll('tr');
+    console.log('מידע מהדומיין:');
+    rows.forEach(row => {
+        const columns = row.querySelectorAll('td');
+        if (columns.length === 2) {
+            const key = columns[0].textContent.trim();
+            const value = columns[1].textContent.trim();
+            console.log(`${key}: ${value}`);
         }
-    }
+    });
 }
 
 const domain = prompt('אנא הכנס את שם הדומיין שברצונך לבדוק:');
